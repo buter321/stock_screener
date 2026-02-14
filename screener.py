@@ -12,18 +12,15 @@ import json
 import os
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+import time
 
 # ============================================
 # CONFIGURATION - EDIT TICKER LIST DI SINI
 # ============================================
 
-# Cara edit: Tinggal ganti string di bawah ini
-# Format: 'TICKER1,TICKER2,TICKER3' (pisah pakai koma, TANPA spasi)
-# Script akan otomatis tambah .JK suffix
+TICKER_STRING = 'BBCA,BBRI,BMRI,TLKM,ASII,UNVR,INDF,KLBF,ICBP,SMGR'
 
-TICKER_STRING = 'AADI, ADMR, ADRO, AKRA, AMMN, AMRT, ANTM, ASII, BBCA, BBNI, BBRI, BBTN, BMRI, BRPT, BUMI, CPIN, CTRA, EMTK, EXCL, GOTO, ICBP, INCO, INDF, INKP, ISAT, ITMG, JPFA, KLBF, MAPI, MBMA, MDKA, MEDC, NCKL, PGAS, PGEO, PTBA, SCMA, SMGR, TLKM, TOWR, UNTR, UNVR'
-
-# Jangan edit di bawah ini (otomatis convert ke list)
+# Jangan edit di bawah ini
 TICKERS = [ticker.strip() + '.JK' for ticker in TICKER_STRING.split(',') if ticker.strip()]
 
 # ============================================
@@ -37,15 +34,36 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 def get_comprehensive_data(ticker):
     try:
-        print(f"Processing {ticker}...", end=" ")
-        stock = yf.Ticker(ticker)
-        hist = stock.history(period="3mo")
+        print(f"Processing {ticker}...", end=" ", flush=True)
         
-        if len(hist) < 50:
+        # Add delay to avoid rate limiting
+        time.sleep(2)
+        
+        # Download with user agent
+        stock = yf.Ticker(ticker)
+        
+        # Try to get historical data with retry
+        hist = None
+        for attempt in range(3):
+            try:
+                hist = stock.history(period="3mo")
+                if len(hist) >= 50:
+                    break
+                time.sleep(3)
+            except Exception as e:
+                print(f"Attempt {attempt+1} failed: {e}", end=" ")
+                time.sleep(5)
+        
+        if hist is None or len(hist) < 50:
             print("❌ Insufficient data")
             return None
         
-        info = stock.info
+        # Get info with error handling
+        try:
+            info = stock.info
+        except:
+            print("❌ Failed to get info")
+            return None
         
         pe_ratio = info.get('trailingPE', np.nan)
         pb_ratio = info.get('priceToBook', np.nan)
