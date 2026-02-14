@@ -18,10 +18,10 @@ import time
 # CONFIGURATION - EDIT TICKER LIST DI SINI
 # ============================================
 
-TICKER_STRING = 'BBCA,BBRI,BMRI,TLKM,ASII,UNVR,INDF,KLBF,ICBP,SMGR'
+TICKER_STRING = 'AAPL,MSFT,GOOGL,TSLA,AMZN,META,NVDA,JPM,V,WMT'
 
 # Jangan edit di bawah ini
-TICKERS = [ticker.strip() + '.JK' for ticker in TICKER_STRING.split(',') if ticker.strip()]
+TICKERS = [ticker.strip() + '' for ticker in TICKER_STRING.split(',') if ticker.strip()]
 
 # ============================================
 
